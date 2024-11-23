@@ -1,0 +1,7 @@
+Dataset,Pointer tip MAE,Closest point MAE,Error norm
+Debug A,0.004,0.002,0.003
+Debug B,0.002,0.001,0.003
+Debug C,0.002,0.002,0.003
+Debug D,0.003,0.001,0.006
+Debug E,0.004,0.003,0.003
+Debug F,0.003,0.002,0.004
