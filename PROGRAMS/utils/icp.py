@@ -56,6 +56,11 @@ class IterativeClosestPoint():
             closest_pt, dist = self.match(pt_cloud, meshgrid)
 
             # Step 2: Compute transformation
+                # call point cloud registration function on closest_pt and points on meshgrid corresponding to closest_pt (A, B)
+                
+                # compute sigma = residual error between A and B
+                # compute epsilon max = maximum residual error between A and B             
+                # compute epsilon = residual error between A and B
 
             # Step 3: Update maximum distance threshold
 
