@@ -73,7 +73,7 @@ class IterativeClosestPoint():
         # Initialize rigid registration helper class
         rigid_register = PointCloudRegistration(max_epochs=10)
 
-        for i in tqdm(range(self.max_iter)):
+        for _ in tqdm(range(self.max_iter)):
             # Find closest points and distances
             closest_pt, dist = self.match(pt_cloud, meshgrid)
 
@@ -89,7 +89,7 @@ class IterativeClosestPoint():
             # update thre overall transformation
             F = F @ rigid_register(pt_cloud[candidates], closest_pt[candidates])
 
-            # TODO Compute transformation and residual error terms
+            # TODO Compute residual error terms
 
             raise NotImplementedError
 
