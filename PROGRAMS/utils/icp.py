@@ -16,7 +16,14 @@ class Matching(Enum):
     VECTORIZED_OCTREE = 4
 
 class IterativeClosestPoint():
-    def __init__(self, match_mode: Matching = Matching.SIMPLE_LINEAR) -> None:
+    def __init__(
+        self,
+        max_iter: int = 1000,
+        match_mode: Matching = Matching.VECTORIZED_LINEAR
+    ) -> None:
+        # Define maximum number of ICP iterations
+        self.max_iter: int = max_iter
+
         # Define the algorithm used to find closest points
         self.match_mode: Matching = match_mode
 
@@ -28,7 +35,9 @@ class IterativeClosestPoint():
         """
         Runs the full ICP algorithm given a point cloud and meshgrid.
         """
-        raise NotImplementedError
+        
+        for i in self.max_iter:
+            closest_pt, dist = self.match(pt_cloud, meshgrid)
 
     def match(
         self,
