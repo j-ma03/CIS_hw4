@@ -2,6 +2,8 @@ import numpy as np
 from numpy.typing import NDArray
 from typing import Tuple
 from enum import Enum
+from tqdm import tqdm
+from utils.coordinate_calibration import PointCloudRegistration
 from utils.meshgrid import Meshgrid
 from utils.octree import Octree
 
@@ -20,7 +22,8 @@ class IterativeClosestPoint():
         self,
         max_iter: int = 1000,
         match_mode: Matching = Matching.VECTORIZED_LINEAR,
-        gamma: float = 0.95
+        gamma: float = 1.0,
+        early_stopping: int = 10
     ) -> None:
         # Define maximum number of ICP iterations
         self.max_iter: int = max_iter
@@ -29,7 +32,12 @@ class IterativeClosestPoint():
         self.match_mode: Matching = match_mode
 
         # Define termination threshold
-        self.gamma = gamma
+        self.gamma: float = gamma
+
+        # Define early stopping counter defining the maximum
+        # number of iterations
+        self.early_stopping: int = early_stopping
+
 
     def __call__(
         self,
@@ -40,31 +48,74 @@ class IterativeClosestPoint():
         Runs the full ICP algorithm given a point cloud and meshgrid.
         """
 
+        # Point cloud should be an Nx3 matrix of (x, y, z) coordinates
+        if len(pt_cloud.shape) != 2 or pt_cloud.shape[1] != 3:
+            raise ValueError('Point cloud should be an Nx3 matrix containing 3D coordinates!')
+
+        # Input meshgrid should be a Meshgrid object
+        if not isinstance(meshgrid, Meshgrid):
+            raise Exception(f'Expected input meshgrid should be of type Meshgrid but got \'{meshgrid.__class__.__name__}\'!')
+
         # List storing point cloud and meshgrid closest point
-        # matching similarity
+        # matching error
         match_score = [np.inf]
 
-        # List storing maximum closest distance threshold for point cloud
+        # Stores the maximum closest distance threshold for point cloud
         # and meshgrid closest point to be considered a candidate
-        dist_thresh = [np.inf]
+        dist_thresh = np.inf
 
-        # Stores the best transformation from point cloud to meshgrid
-        F = np.eye(4)
+        # Stores the current and best transformation from
+        # the point cloud to meshgrid
+        F: NDArray = np.eye(4)
+        F_best: NDArray = np.eye(4)
+        early_stop_count = 0    # Number of times failed termination condition
 
-        for i in range(1, self.max_iter + 1):
-            # Step 1: Find closest points
+        # Initialize rigid registration helper class
+        rigid_register = PointCloudRegistration(max_epochs=10)
+
+        for _ in tqdm(range(self.max_iter)):
+            # Find closest points and distances
             closest_pt, dist = self.match(pt_cloud, meshgrid)
 
-            # Step 2: Compute transformation
-                # call point cloud registration function on closest_pt and points on meshgrid corresponding to closest_pt (A, B)
+            # Find candidates where distance to closest point is
+            # less than the maximum threshold
+            candidates = np.where(dist < dist_thresh)[0]
+
+            # Stop the algorithm if there are no candidates to consider
+            if candidates.size == 0:
+                break
+
+            # Find the best rigid registration transformation and
+            # update thre overall transformation
+            F = F @ rigid_register(pt_cloud[candidates], closest_pt[candidates])
+
+            # TODO Compute residual error terms
+
+            raise NotImplementedError
+
+            # Update distance threshold to three-times the similarity
+            # score between the point cloud and closest meshgrid points
+            dist_thresh = 3 * match_score[-1]
+            
+            # Compute the ratio reflecting the change in point cloud
+            # to meshgrid matching score from the previous iteration
+            match_ratio = match_score[-1] / match_score[-2]
+
+            # Check if the match ratio fails the termination condition
+            if match_ratio >= self.gamma:
+                early_stop_count += 1   # Increment counter
+            else:
+                F_best = F.copy()   # New best transformation found
+                early_stop_count = 0    # Reset counter
+
+            # Stop algorithm if failed termination condition
+            # too many times
+            if early_stop_count >= self.early_stopping:
+                break
+
+        return F_best
                 
-                # compute sigma = residual error between A and B
-                # compute epsilon max = maximum residual error between A and B             
-                # compute epsilon = residual error between A and B
-
-            # Step 3: Update maximum distance threshold
-
-            # Step 4: Check termination condition
+                
 
 
     def match(
