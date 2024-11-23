@@ -42,16 +42,25 @@ class IterativeClosestPoint():
 
         # List storing point cloud and meshgrid closest point
         # matching similarity
-        match_score = []
+        match_score = [np.inf]
 
         # List storing maximum closest distance threshold for point cloud
         # and meshgrid closest point to be considered a candidate
-        dist_thresh = []
+        dist_thresh = [np.inf]
 
         # Stores the best transformation from point cloud to meshgrid
         F = np.eye(4)
-        for i in self.max_iter:
+
+        for i in range(1, self.max_iter + 1):
+            # Step 1: Find closest points
             closest_pt, dist = self.match(pt_cloud, meshgrid)
+
+            # Step 2: Compute transformation
+
+            # Step 3: Update maximum distance threshold
+
+            # Step 4: Check termination condition
+
 
     def match(
         self,
