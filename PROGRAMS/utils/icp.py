@@ -19,13 +19,17 @@ class IterativeClosestPoint():
     def __init__(
         self,
         max_iter: int = 1000,
-        match_mode: Matching = Matching.VECTORIZED_LINEAR
+        match_mode: Matching = Matching.VECTORIZED_LINEAR,
+        gamma: float = 0.95
     ) -> None:
         # Define maximum number of ICP iterations
         self.max_iter: int = max_iter
 
         # Define the algorithm used to find closest points
         self.match_mode: Matching = match_mode
+
+        # Define termination threshold
+        self.gamma = gamma
 
     def __call__(
         self,
@@ -35,7 +39,17 @@ class IterativeClosestPoint():
         """
         Runs the full ICP algorithm given a point cloud and meshgrid.
         """
-        
+
+        # List storing point cloud and meshgrid closest point
+        # matching similarity
+        match_score = []
+
+        # List storing maximum closest distance threshold for point cloud
+        # and meshgrid closest point to be considered a candidate
+        dist_thresh = []
+
+        # Stores the best transformation from point cloud to meshgrid
+        F = np.eye(4)
         for i in self.max_iter:
             closest_pt, dist = self.match(pt_cloud, meshgrid)
 
