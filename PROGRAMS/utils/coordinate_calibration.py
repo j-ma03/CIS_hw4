@@ -14,13 +14,17 @@ class PointCloudRegistration():
     def __init__(
         self,
         eps: float = 1e-3,
-        max_epochs: Union[int, None] = 100
+        max_epochs: Union[int, None] = 100,
+        verbose: bool = False
     ) -> None:
         # Minimum acceptable registration maximum residual error
         self.eps = eps
 
         # Maximum number of epochs before terminating registration algorithm
         self.max_epochs = max_epochs
+
+        # Toggle progress bar and print statements
+        self.verbose = verbose
 
     """
     Performs registration between a batch of two point clouds (each containing a set 
@@ -52,10 +56,11 @@ class PointCloudRegistration():
         # Use identity matrix as initial guess for the registration transformation
         F = np.eye(4)
         
-        print('Performing 3D point cloud registration...')
+        if self.verbose:
+            print('Performing 3D point cloud registration...')
 
         # Perform direct iterative registration algorithm
-        for _ in (pbar := tqdm(range(self.max_epochs), bar_format="{n_fmt}ep [{elapsed}<{remaining}, {rate_fmt}{postfix}]")):
+        for _ in (pbar := tqdm(range(self.max_epochs), bar_format="{n_fmt}ep [{elapsed}<{remaining}, {rate_fmt}{postfix}]", disable=(not self.verbose))):
             # Store error averaged across the entire batch
             err_epoch = np.zeros((3,))
 
@@ -64,7 +69,7 @@ class PointCloudRegistration():
                 predicted = F @ pt_cloud_a[j].T
 
                 # Calculate transformation that minimizes error and update F
-                del_F, err = self.register_cloud(predicted[:3].T, pt_cloud_b[j,:,:3])
+                del_F, err = self._register_cloud(predicted[:3].T, pt_cloud_b[j,:,:3])
                 F = del_F @ F
                 err_epoch += err
 
@@ -79,7 +84,8 @@ class PointCloudRegistration():
             if err_epoch.max() < self.eps:
                 break
         
-        print('Done.')
+        if self.verbose:
+            print('Done.')
 
         return F, err
 
@@ -90,7 +96,7 @@ class PointCloudRegistration():
 
     Based on Dr. Russell Tayor's lecture slides: https://ciis.lcsr.jhu.edu/lib/exe/fetch.php?media=courses:455-655:lectures:rigid3d3dcalculations.pdf
     """
-    def register_cloud(
+    def _register_cloud(
         self,
         pt_cloud_a: NDArray[np.float32],
         pt_cloud_b: NDArray[np.float32]

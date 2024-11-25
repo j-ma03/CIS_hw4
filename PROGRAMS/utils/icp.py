@@ -22,7 +22,7 @@ class IterativeClosestPoint():
         self,
         max_iter: int = 1000,
         match_mode: Matching = Matching.VECTORIZED_LINEAR,
-        gamma: float = 1.0,
+        gamma: float = 0.95,
         early_stopping: int = 10
     ) -> None:
         # Define maximum number of ICP iterations
@@ -71,11 +71,13 @@ class IterativeClosestPoint():
         early_stop_count = 0    # Number of times failed termination condition
 
         # Initialize rigid registration helper class
-        rigid_register = PointCloudRegistration(max_epochs=10)
+        rigid_register = PointCloudRegistration(max_epochs=10, verbose=False)
+        pt_cloud_i = pt_cloud[:,:3].copy()
+        pt_cloud = self._homogenize(pt_cloud)
 
-        for _ in tqdm(range(self.max_iter)):
+        for _ in (pbar := tqdm(range(self.max_iter), bar_format="{n_fmt}it [{elapsed}<{remaining}, {rate_fmt}{postfix}]")):
             # Find closest points and distances
-            closest_pt, dist = self.match(pt_cloud, meshgrid)
+            closest_pt, dist = self.match(pt_cloud_i, meshgrid)
 
             # Find candidates where distance to closest point is
             # less than the maximum threshold
@@ -87,15 +89,21 @@ class IterativeClosestPoint():
 
             # Find the best rigid registration transformation and
             # update thre overall transformation
-            F = F @ rigid_register(pt_cloud[candidates], closest_pt[candidates])
+            F_i = rigid_register.register(
+                pt_cloud_i[candidates][None,], closest_pt[candidates][None,]
+            )[0]
+
+            # Update point cloud with transformation
+            pt_cloud_i = self._homogenize(pt_cloud_i)
+            pt_cloud_i = (F_i @ pt_cloud_i.T)[:3].T
+            F = F @ F_i
 
             # TODO Compute residual error terms                
             # compute sigma = residual error between A and B
             # compute epsilon max = maximum residual error between A and B             
             # compute epsilon = residual error between A and B; append to match score
-            sigma, epsilon_max, epsilon = self._residual_error(pt_cloud, closest_pt, F)
-
-            raise NotImplementedError
+            sigma, epsilon_max, epsilon = self._residual_error(pt_cloud_i, closest_pt)
+            match_score.append(epsilon)
 
             # Update distance threshold to three-times the similarity
             # score between the point cloud and closest meshgrid points
@@ -104,6 +112,10 @@ class IterativeClosestPoint():
             # Compute the ratio reflecting the change in point cloud
             # to meshgrid matching score from the previous iteration
             match_ratio = match_score[-1] / match_score[-2]
+            
+            # Display match ratio on progress bar
+            pbar.set_postfix(match=match_score[-1], prev_match_ratio=match_ratio)
+            pbar.update(0)
 
             # Check if the match ratio fails the termination condition
             if match_ratio >= self.gamma:
@@ -117,7 +129,11 @@ class IterativeClosestPoint():
             if early_stop_count >= self.early_stopping:
                 break
 
-        return F_best
+        # Compute best point cloud and closest distance to mesh
+        best_pt_cloud = (F_best @ pt_cloud.T).T[:,:3]
+        closest_pt, dist = self.match(best_pt_cloud[:,:3], meshgrid)
+
+        return best_pt_cloud, closest_pt, dist, F_best
                 
                 
 
@@ -422,20 +438,42 @@ class IterativeClosestPoint():
     def _residual_error(
         self, 
         pt_cloud: NDArray[np.float32],
-        closest_pt: NDArray[np.float32],
-        F: NDArray
+        closest_pt: NDArray[np.float32]
     )-> Tuple[float, float, float]:
         """
         Computes the residual error terms between the transformed point cloud and meshgrid
         closest points.
         """
+
         #TODO compute residual error terms and return sigma, epsilon_max, epsilon
         num_points = pt_cloud.shape[0] # NumElts(E)
-        transformed_pt_cloud = F @ pt_cloud # F * a_k
-        res_error = closest_pt - transformed_pt_cloud # e_k = b_k - F * a_k
-        res_error_squared = res_error @ res_error.T # e_k * e_k
+
+        res_error = closest_pt - pt_cloud # e_k = b_k - F * a_k
+        res_error_squared = np.sum(res_error * res_error, axis=1) # e_k * e_k
+
         sigma = np.sqrt(np.sum(res_error_squared)) / num_points
         epsilon_max = np.sqrt(np.max(res_error_squared))
         epsilon = np.sum(np.sqrt(res_error_squared)) / num_points
+
         return sigma, epsilon_max, epsilon
+    
+    def _homogenize(self, pt_cloud: NDArray[np.float32]) -> NDArray[np.float32]:
+        """
+        Converts a point cloud stored in an Nx3 matrix of (x, y, z) points 
+        into homogeneous coordinates.
+        """
+
+        # Point cloud inputs must be in format BxNx3 (B = batch size, N = number of points)
+        if len(pt_cloud.shape) != 2 or not 3 <= pt_cloud.shape[1] <= 4:
+            raise Exception(f'Point clouds must have shape Nx3 or Nx4!')
+
+        # Pad point cloud matrix to create homogenous coordinates if necessary
+        if pt_cloud.shape[1] == 3:
+            homog = np.ones((pt_cloud.shape[0], 1))
+            return np.concatenate([pt_cloud, homog], axis=1)
+        else:
+            # Point cloud is 
+            return pt_cloud
+
+        
     
