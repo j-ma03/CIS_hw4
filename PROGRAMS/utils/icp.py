@@ -89,7 +89,11 @@ class IterativeClosestPoint():
             # update thre overall transformation
             F = F @ rigid_register(pt_cloud[candidates], closest_pt[candidates])
 
-            # TODO Compute residual error terms
+            # TODO Compute residual error terms                
+            # compute sigma = residual error between A and B
+            # compute epsilon max = maximum residual error between A and B             
+            # compute epsilon = residual error between A and B; append to match score
+            sigma, epsilon_max, epsilon = self._residual_error(pt_cloud, closest_pt, F)
 
             raise NotImplementedError
 
@@ -414,4 +418,24 @@ class IterativeClosestPoint():
             )
 
         return closest_pt, min_dist
+    
+    def _residual_error(
+        self, 
+        pt_cloud: NDArray[np.float32],
+        closest_pt: NDArray[np.float32],
+        F: NDArray
+    )-> Tuple[float, float, float]:
+        """
+        Computes the residual error terms between the transformed point cloud and meshgrid
+        closest points.
+        """
+        #TODO compute residual error terms and return sigma, epsilon_max, epsilon
+        num_points = pt_cloud.shape[0] # NumElts(E)
+        transformed_pt_cloud = F @ pt_cloud # F * a_k
+        res_error = closest_pt - transformed_pt_cloud # e_k = b_k - F * a_k
+        res_error_squared = res_error @ res_error.T # e_k * e_k
+        sigma = np.sqrt(np.sum(res_error_squared)) / num_points
+        epsilon_max = np.sqrt(np.max(res_error_squared))
+        epsilon = np.sum(np.sqrt(res_error_squared)) / num_points
+        return sigma, epsilon_max, epsilon
     
