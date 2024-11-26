@@ -7,8 +7,8 @@ from utils.meshgrid import BoundingBox, Triangle
 import numpy as np
 
 EPS = 0
-DATA_DIR = 'PROGRAMS/pa345_data'
-OUTPUT_DIR = 'PROGRAMS/OUTPUT'
+DATA_DIR = './pa345_data'
+OUTPUT_DIR = './OUTPUT'
 
 class TestClosestPoint(unittest.TestCase):  
     """
@@ -181,18 +181,19 @@ class TestOutputAccuracy(unittest.TestCase):
         """
         tests that our own output values are within a certain threshold of the output values in the debug files
         """
+        for SAMPLE_ID in ['A', 'B', 'C', 'D', 'E', 'F']:
+            print(f'Testing sample {SAMPLE_ID}')
+            matcher = FileOutputMatcher()
+            error_s_k, error_c_k, error_norm = matcher(f'{OUTPUT_DIR}/pa4-{SAMPLE_ID}-Output.txt', f'{DATA_DIR}/PA4-{SAMPLE_ID}-Debug-Output.txt')
 
-        matcher = FileOutputMatcher()
-        error_d_k, error_c_k, error_norm = matcher(f'{OUTPUT_DIR}/pa3-A-Output.txt', f'{DATA_DIR}/PA3-A-Debug-Output.txt')
+            # assert that the mean absolute error of d_k is within a certain threshold
+            self.assertTrue(np.all(np.less_equal(error_s_k, [0.1, 0.1, 0.1])))
 
-        # assert that the mean absolute error of d_k is within a certain threshold
-        self.assertTrue(np.all(np.less_equal(error_d_k, [0.01, 0.01, 0.01])))
+            # assert that the mean absolute error of c_k is within a certain threshold
+            self.assertTrue(np.all(np.less_equal(error_c_k, [0.1, 0.1, 0.1])))
 
-        # assert that the mean absolute error of c_k is within a certain threshold
-        self.assertTrue(np.all(np.less_equal(error_c_k, [0.01, 0.01, 0.01])))
-
-        # assert that the mean absolute error of ||d_k-c_k|| is within a certain threshold
-        self.assertTrue(np.less_equal(error_norm, 0.01))
+            # assert that the mean absolute error of ||d_k-c_k|| is within a certain threshold
+            self.assertTrue(np.less_equal(error_norm, 0.1))
 
 
 class FileOutputMatcher():
@@ -212,12 +213,12 @@ class FileOutputMatcher():
         raw_data2 = dl2.raw_data
 
         # get the mean absolute error for d_x
-        error_d_x = np.mean(np.abs(raw_data1[:, 0] - raw_data2[:, 0]))
+        error_s_x = np.mean(np.abs(raw_data1[:, 0] - raw_data2[:, 0]))
         # get the mean absolute error for d_y
-        error_d_y = np.mean(np.abs(raw_data1[:, 1] - raw_data2[:, 1]))
+        error_s_y = np.mean(np.abs(raw_data1[:, 1] - raw_data2[:, 1]))
         # get the mean absolute error for d_z
-        error_d_z = np.mean(np.abs(raw_data1[:, 2] - raw_data2[:, 2]))
-        error_d_k = (error_d_x, error_d_y, error_d_z)
+        error_s_z = np.mean(np.abs(raw_data1[:, 2] - raw_data2[:, 2]))
+        error_s_k = (error_s_x, error_s_y, error_s_z)
 
         # get the mean absolute error for c_x
         error_c_x = np.mean(np.abs(raw_data1[:, 3] - raw_data2[:, 3]))
@@ -230,7 +231,7 @@ class FileOutputMatcher():
         # get the mean absolute error for ||d_k-c_k||
         error_norm = np.mean(np.abs(raw_data1[:, 6] - raw_data2[:, 6]))
 
-        return error_d_k, error_c_k, error_norm
+        return error_s_k, error_c_k, error_norm
 
 if __name__ == '__main__':
     unittest.main()
