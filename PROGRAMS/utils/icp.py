@@ -20,7 +20,7 @@ class Matching(Enum):
 class IterativeClosestPoint():
     def __init__(
         self,
-        max_iter: int = 1000,
+        max_iter: int = 200,
         match_mode: Matching = Matching.VECTORIZED_LINEAR,
         gamma: float = 0.95,
         early_stopping: int = 10
@@ -37,8 +37,7 @@ class IterativeClosestPoint():
         # Define early stopping counter defining the maximum
         # number of iterations
         self.early_stopping: int = early_stopping
-
-
+    
     def __call__(
         self,
         pt_cloud: NDArray[np.float32],
@@ -133,10 +132,7 @@ class IterativeClosestPoint():
         best_pt_cloud = (F_best @ pt_cloud.T).T[:,:3]
         closest_pt, dist = self.match(best_pt_cloud[:,:3], meshgrid)
 
-        return best_pt_cloud, closest_pt, dist, F_best
-                
-                
-
+        return best_pt_cloud, closest_pt, dist, F_best         
 
     def match(
         self,
