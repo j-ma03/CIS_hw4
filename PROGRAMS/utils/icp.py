@@ -20,7 +20,7 @@ class Matching(Enum):
 class IterativeClosestPoint():
     def __init__(
         self,
-        max_iter: int = 1000,
+        max_iter: int = 200,
         match_mode: Matching = Matching.VECTORIZED_LINEAR,
         gamma: float = 0.95,
         early_stopping: int = 10
@@ -37,7 +37,6 @@ class IterativeClosestPoint():
         # Define early stopping counter defining the maximum
         # number of iterations
         self.early_stopping: int = early_stopping
-
 
     def __call__(
         self,
@@ -98,7 +97,6 @@ class IterativeClosestPoint():
             pt_cloud_i = (F_i @ pt_cloud_i.T)[:3].T
             F = F @ F_i
 
-            # TODO Compute residual error terms                
             # compute sigma = residual error between A and B
             # compute epsilon max = maximum residual error between A and B             
             # compute epsilon = residual error between A and B; append to match score
@@ -133,10 +131,7 @@ class IterativeClosestPoint():
         best_pt_cloud = (F_best @ pt_cloud.T).T[:,:3]
         closest_pt, dist = self.match(best_pt_cloud[:,:3], meshgrid)
 
-        return best_pt_cloud, closest_pt, dist, F_best
-                
-                
-
+        return best_pt_cloud, closest_pt, dist, F_best         
 
     def match(
         self,
@@ -445,12 +440,14 @@ class IterativeClosestPoint():
         closest points.
         """
 
-        #TODO compute residual error terms and return sigma, epsilon_max, epsilon
         num_points = pt_cloud.shape[0] # NumElts(E)
 
         res_error = closest_pt - pt_cloud # e_k = b_k - F * a_k
         res_error_squared = np.sum(res_error * res_error, axis=1) # e_k * e_k
 
+        # compute sigma = residual error between A and B
+        # compute epsilon max = maximum residual error between A and B             
+        # compute epsilon = residual error between A and B
         sigma = np.sqrt(np.sum(res_error_squared)) / num_points
         epsilon_max = np.sqrt(np.max(res_error_squared))
         epsilon = np.sum(np.sqrt(res_error_squared)) / num_points

@@ -15,7 +15,7 @@ class PointCloudRegistration():
         self,
         eps: float = 1e-3,
         max_epochs: Union[int, None] = 100,
-        verbose: bool = False
+        verbose: bool = True
     ) -> None:
         # Minimum acceptable registration maximum residual error
         self.eps = eps
