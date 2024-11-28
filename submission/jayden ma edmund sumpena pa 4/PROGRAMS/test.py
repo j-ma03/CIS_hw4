@@ -8,7 +8,7 @@ import numpy as np
 
 EPS = 0
 DATA_DIR = './pa345_data'
-OUTPUT_DIR = './OUTPUT'
+OUTPUT_DIR = '../OUTPUT'
 
 class TestClosestPoint(unittest.TestCase):  
     """
@@ -163,18 +163,6 @@ class TestBoundingBoxContains(unittest.TestCase):
             self.assertFalse(box.contains(f)[0])
         pass
 
-
-
-# class TestDataloader(unittest.TestCase):
-#     def test_read_file(self):
-#         """
-#         Test the read_file method of the RigidBodyDataloader class
-#         """
-#         # create a dataloader object
-#         dl = RigidBodyDataloader.read_file('data/1.txt')
-#         self.assertEqual(dl.N_markers, 4)
-#         self.assertEqual(dl.markers.shape, (4, 3))
-#         self.assertEqual(dl.tip.shape, (1, 3))
     
 class TestOutputAccuracy(unittest.TestCase):
     def test_output_accuracy(self):
