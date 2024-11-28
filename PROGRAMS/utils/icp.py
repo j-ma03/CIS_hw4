@@ -37,7 +37,7 @@ class IterativeClosestPoint():
         # Define early stopping counter defining the maximum
         # number of iterations
         self.early_stopping: int = early_stopping
-    
+
     def __call__(
         self,
         pt_cloud: NDArray[np.float32],
@@ -97,7 +97,6 @@ class IterativeClosestPoint():
             pt_cloud_i = (F_i @ pt_cloud_i.T)[:3].T
             F = F @ F_i
 
-            # TODO Compute residual error terms                
             # compute sigma = residual error between A and B
             # compute epsilon max = maximum residual error between A and B             
             # compute epsilon = residual error between A and B; append to match score
@@ -441,12 +440,14 @@ class IterativeClosestPoint():
         closest points.
         """
 
-        #TODO compute residual error terms and return sigma, epsilon_max, epsilon
         num_points = pt_cloud.shape[0] # NumElts(E)
 
         res_error = closest_pt - pt_cloud # e_k = b_k - F * a_k
         res_error_squared = np.sum(res_error * res_error, axis=1) # e_k * e_k
 
+        # compute sigma = residual error between A and B
+        # compute epsilon max = maximum residual error between A and B             
+        # compute epsilon = residual error between A and B
         sigma = np.sqrt(np.sum(res_error_squared)) / num_points
         epsilon_max = np.sqrt(np.max(res_error_squared))
         epsilon = np.sum(np.sqrt(res_error_squared)) / num_points

@@ -1,2 +1,0 @@
-20, ./OUTPUT/pa3-J-Output.txt
-1.28 -0.11 -25.50 
